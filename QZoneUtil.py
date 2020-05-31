@@ -12,6 +12,7 @@ import base64
 import os
 import time
 
+
 from urllib3 import encode_multipart_formdata
 
 HOST = 'https://jiazhang.qq.com/'
@@ -55,12 +56,13 @@ class QZoneUtil:
     #
     # __gtk = ''
 
-    def __init__(self, uin, text, proxy=''):
+    def __init__(self, uin, text, row, proxy=''):
         self.__session = requests.session()
         headers = {
             'user-agent': 'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3704.400 QQBrowser/10.4.3587.400',
             'Referer': 'https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=523005419&style=42&s_url=http://wtlogin.qq.com/&daid=120&pt_no_auth=1'
         }
+        self.row = row
         self.__session.headers = headers
         self.forward_text = text
         if proxy != '':
@@ -78,26 +80,26 @@ class QZoneUtil:
             self.__session.cookies.clear('.qzone.qq.com')
         except:
             pass
-        else:
-            pass
-        skey = self.__session.cookies['p_skey']
-        self.__gtk = getGTK(skey)
+
         try:
-            home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index")
-            self.__qzone_token = re.search(r'window\.g_qzonetoken = \(function\(\)\{ try\{return (.*?);\} catch\(e\)',
-                                       home_page.text)
+            skey = self.__session.cookies['p_skey']
+            self.__gtk = getGTK(skey)
         except:
-            print("代理失败")
-            return False
-        # print(self.__qzone_token)
+            err = 'CK 异常'
+            return err
+        try:
+            home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
+        except Exception as e:
+            print('异常', e)
+            err = '代理异常'
+            return err
+        self.__qzone_token = re.search(r'window\.g_qzonetoken = \(function\(\)\{ try\{return (.*?);\} catch\(e\)',
+                                       home_page.text)
         if not self.__qzone_token:
-            return False
+            return 'cookie 过期'
         self.__qzone_token = self.__qzone_token.group(1)
         self.__qzone_token = self.__qzone_token.strip('"')
-        # print(self.__qzone_token)
-
-        skey = self.__session.cookies['p_skey']
-        self.__gtk = getGTK(skey)
+        return None
 
 
     def check_user_need_vcode(self, aid, daid):
@@ -427,12 +429,14 @@ class QZoneUtil:
                 # print(response)
                 if response.status_code != 200:
                     print("response.status_code != 200", response.text)
-                    return False
+                    return '创建相册失败'
                 break
             except Exception as e:
                 # print('代理访问频繁')
                 i += 1
-                time.sleep(10)
+                if i == 3:
+                    return '代理异常'
+                time.sleep(5)
             # print(traceback.print_exc())
 
         # print(response.text)
@@ -441,16 +445,17 @@ class QZoneUtil:
         # print(msg)
         if msg != None:
             print(msg.group(1) + " -- "+str(self.__uin))
-            return False
+            err = msg.group(1)
+            return err
         param = r'\"id\" : \"(.+?)\"'
         id = re.search(param, response.text)
         # print(id)
         if id != None :
             id = id.groups(1)
             self.__albumId = id[0]
-            return True
+            return None
 
-        return False
+        return '相册ID未获取'
 
     def set_img_pri(self):
         set_img_url = "https://user.qzone.qq.com/proxy/domain/photo.qzone.qq.com/cgi-bin/common/cgi_modify_album_v2?g_tk={0}".format(self.__gtk)
@@ -458,7 +463,7 @@ class QZoneUtil:
         data = "uin={0}&albumId={1}&nvip=1&type=4&priv=1&pypriv=undefined&question=&answer=&bitmap=10000000&whiteList=&appid=4&notice=0&hostUin={0}&plat=qzone&source=qzone&inCharset=utf-8&outCharset=utf-8&qzreferrer={2}".format(self.__uin, self.__albumId, referer)
         self.__session.headers["Referer"] = referer
         self.__session.headers["Content-Type"] = "application/json"
-        time.sleep(5)
+        time.sleep(2)
         i = 0
         while i <= 3:
             try:
@@ -466,8 +471,11 @@ class QZoneUtil:
                 break
             except Exception as e:
                 # print("代理频繁")
-                time.sleep(10)
                 i += 1
+                if i == 3:
+                    return '代理异常'
+                time.sleep(5)
+
         # print(rsp.text)
 
 
@@ -515,12 +523,17 @@ class QZoneUtil:
         session_url = "https://h5.qzone.qq.com/webapp/json/sliceUpload/FileBatchControl/{0}?g_tk={1}".format(pic_md5, self.__gtk)
         self.__session.headers["Content-Type"] = "application/json"
         self.__session.headers["Referer"] = "https://user.qzone.qq.com/proxy/domain/qzs.qq.com/qzone/photo/v7/page/upload.html"
-        ret = self.__session.post(session_url, data=data)
+        try:
+            ret = self.__session.post(session_url, data=data)
+        except Exception as e:
+            print(e)
+            return '代理超时'
         # print("rsp status", ret.status_code)
         try:
             session_json = json.loads(ret.text)
         except:
-            return False
+            print(ret.text)
+            return "图片申请上传错误"
         # print(type(session_json))
         session = session_json["data"]["session"]
         self.__session.headers[
@@ -553,19 +566,20 @@ class QZoneUtil:
                 response = self.__session.post(upload_url, data=m[0])
             except:
                 print('代理异常')
-                return False
+                return '代理异常'
             # print(response.text)
             try:
                 pic_json = json.loads(response.text)
             except:
-                return False
+                print(response.text)
+                return '图片上传错误'
             seq += 1
             offset += 16384
             end += 16384
 
 
         if pic_json == "" or pic_json == None:
-            return False
+            return '图片上传错误'
         sAlbumID = pic_json["data"]["biz"]["sAlbumID"]
         sPhotoID = pic_json["data"]["biz"]["sPhotoID"]
         desc_forward = "https://user.qzone.qq.com/{0}/infocenter".format(self.__uin)
@@ -575,7 +589,7 @@ class QZoneUtil:
         self.__session.headers["Referer"] = desc_forward
         self.__session.headers[
             "Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
-        time.sleep(2)
+        time.sleep(1)
         try:
             desc_rsp = self.__session.post(desc_url, data=desc_data)
         except:
@@ -590,11 +604,14 @@ class QZoneUtil:
 
         forward_data = "notice=1&fupdate=1&platform=qzone&token={0}&auto=0&type=picture&description={1}&share2weibo=0&onekey=0&comment=0&format=fs&spaceuin={2}&id={3}&reshare=0&batchid=&sendparam=&entryuin={2}&qzreferrer={4}".format(
             self.__gtk, self.forward_text, self.__uin, sAlbumID+":"+sPhotoID, forward_referer).encode('utf-8')
-        time.sleep(4)
-        forward_rsp = self.__session.post(forward_url, data=forward_data)
-        # print(forward_rsp.text)
+        time.sleep(1)
 
-        return True
+        try:
+            forward_rsp = self.__session.post(forward_url, data=forward_data)
+        except:
+           print('转发失败')
+
+        return None
 
 
 
@@ -608,6 +625,47 @@ class QZoneUtil:
             f.close()
             md5 = str(hash_code).lower()
         return md5
+
+
+    def open_auth(self):
+
+        auth_url = 'https://user.qzone.qq.com/proxy/domain/w.qzone.qq.com/cgi-bin/right/set_entryright.cgi?qzonetoken={0}&g_tk={1}'.format(self.__qzone_token, self.__gtk)
+        referer = "https://user.qzone.qq.com/{0}?_t_=0.6701492182668598&&&".format(self.__uin)
+        self.__session.headers["Referer"] = referer
+        self.__session.headers[
+            "Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
+        auth_data = 'flag=0x0&fupdate=1&uin={0}&ver=1&qzreferrer={1}'.format(self.__uin, referer)
+        try:
+            auth_rsp = self.__session.post(auth_url, data=auth_data)
+            print(auth_rsp.text)
+            return None
+        except:
+            return '代理异常 -- 修改空间权限失败'
+
+    def friend_num(self):
+
+        # url = 'https://user.qzone.qq.com/proxy/domain/flower.qzone.qq.com/cgi-bin/getscoreorder?uin={0}&random=0.4473826238440235&g_tk={1}'.format(self.__uin, self.__gtk)
+        url = 'https://user.qzone.qq.com/proxy/domain/r.qzone.qq.com/cgi-bin/tfriend/friend_ship_manager.cgi?uin={0}&do=1&rd=0.31138039549422847&fupdate=1&clean=1&g_tk={1}&qzonetoken={2}&g_tk={1}'.format(self.__uin, self.__gtk, self.__qzone_token)
+        referer = "https://user.qzone.qq.com/{0}".format(self.__uin)
+        self.__session.headers["Referer"] = referer
+        try:
+            rsp = self.__session.get(url)
+        except:
+            return None, '代理异常 -- 获取好友数量失败'
+        try:
+            print(rsp.text)
+            friend_json = rsp.text.replace('_Callback(', '').replace(');', '')
+            print('friend_json', friend_json)
+            if friend_json == None or friend_json == '':
+                return None, '未获取好友数量'
+            friend = json.loads(friend_json)
+            friend_info = friend['data']['items_list']
+            num = len(friend_info)
+            print("num",num)
+            return num, None
+        except:
+            return None, '未获取好友数量'
+
 
     def inquire_img(self):
 

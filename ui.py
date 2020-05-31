@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- codingg: utf-8 -*-
 
 # Form implementation generated from reading ui file 'qzone.ui'
 #
@@ -6,24 +6,37 @@
 #
 # WARNING! All changes made in this file will be lost!
 import _thread
+import ctypes
 import datetime
 import fileinput
 import random
 import sys
 import time
 from os import path
+from queue import Queue
 
 import cv2
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+import PyQt5.sip
 
 import QZoneUtil
+
+import ctypes
+
+try:
+    temp=ctypes.windll.LoadLibrary('opencv_videoio_ffmpeg420_64.dll')
+
+except:
+    pass
 
 
 class Ui_MainWindow(object):
 
+    success_num = 0
+    error_num = 0
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -47,7 +60,7 @@ class Ui_MainWindow(object):
         self.tableWidget.setAutoScrollMargin(16)
         self.tableWidget.setIconSize(QtCore.QSize(0, 0))
         self.tableWidget.setRowCount(1)
-        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setColumnCount(7)
         self.tableWidget.setObjectName("tableWidget")
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -62,13 +75,6 @@ class Ui_MainWindow(object):
         font.setBold(True)
         font.setWeight(75)
         item.setFont(font)
-        # self.tableWidget.setItem(0, 0, item)
-        # item = QtWidgets.QTableWidgetItem()
-        # item.setTextAlignment(QtCore.Qt.AlignCenter)
-        # font = QtGui.QFont()
-        # font.setBold(True)
-        # font.setWeight(75)
-        # item.setFont(font)
         self.tableWidget.setItem(0, 0, item)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -105,6 +111,13 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         item.setFont(font)
         self.tableWidget.setItem(0, 5, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        item.setFont(font)
+        self.tableWidget.setItem(0, 6, item)
         self.tableWidget.horizontalHeader().setDefaultSectionSize(130)
         self.tableWidget.horizontalHeader().setMinimumSectionSize(25)
         self.tableWidget.verticalHeader().setDefaultSectionSize(30)
@@ -237,6 +250,8 @@ class Ui_MainWindow(object):
         item = self.tableWidget.item(0, 4)
         item.setText(_translate("MainWindow", "上传结果"))
         item = self.tableWidget.item(0, 5)
+        item.setText(_translate("MainWindow", "好友数量"))
+        item = self.tableWidget.item(0, 6)
         item.setText(_translate("MainWindow", "备注"))
         self.tableWidget.setSortingEnabled(__sortingEnabled)
         self.startButton.setText(_translate("MainWindow", "开始上传"))
@@ -268,12 +283,18 @@ class Ui_MainWindow(object):
     def openfile(self):
         openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择ck文件", "./","All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
+        if openFile == '':
+            self.log('未选择CK文件')
+            return
         self.log('选中'+str(openFile))
         self.get_cookie(openFile)
 
     def openImg(self):
         openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择img文件", "./","All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
+        if openFile == '':
+            self.log('未选择图片')
+            return
         self.log('选中'+str(openFile))
         img = cv2.imread(openFile, cv2.IMREAD_GRAYSCALE)
         sp = img.shape
@@ -298,7 +319,7 @@ class Ui_MainWindow(object):
         if proxy.find('{') >= 0:
             self.log(proxy)
             return
-        elif path.exists('vc1.png'):
+        elif not path.exists('vc1.png'):
             self.log('未选择图片')
             return
         
@@ -307,38 +328,67 @@ class Ui_MainWindow(object):
         for i in range(0, proxy_len):
             _thread.start_new_thread(self.get_list, (proxy_ip[i],))
 
-    def get_list(self, proxy_text):
+    def get_list(self, proxy_ip):
         global queue
+        i = 0
         while True:
             arg = queue.get()
             if arg != None:
-                up = self.q_zone(arg[0], int(arg[1]), arg[2], proxy_text)
-                up.upload_img()
+                self.q_zone(int(arg[0]), arg[1], arg[2], arg[3])
+                i += 1
 
-    def q_zone(self, qq, cookie, proxy, row):
+    def em(self):
         forward_text = self.textEdit.toPlainText()
-        qzone = QZoneUtil.QZoneUtil(qq, forward_text, proxy=proxy)
-        # print("proxy_ip", proxy_text)
-        try:
-            token_flag = qzone.login_with_cookie(cookie)
-        except KeyError:
-            print("上传失败 <cookie 异常> -- " + str(qq))
-        except Exception as e:
-            print("上传失败 代理异常 -- " + str(self.qq))
+        text_list = list(forward_text)
+        forward_text = ''
+        for i in text_list:
+            em = '[em]e' + str(random.randint(100, 204)) + '[/em]'
+            forward_text += em + i
+
+        return forward_text
+
+    def q_zone(self, qq, cookie, row, proxy_ip):
+        forward_text = self.em()
+        proxy_ip = proxy_ip.strip('\r')
+        proxy_ip = proxy_ip.strip('\n')
+        print("proxy_ip", proxy_ip)
+        qzone = QZoneUtil.QZoneUtil(qq, forward_text, row, proxy=proxy_ip)
+
+        flag = qzone.login_with_cookie(cookie)
+        if flag != None:
+            self.log(str(qq) + ' -- ' + flag)
+            self.table_result(row, flag=flag)
+            return
+        flag = qzone.open_auth()
+        if flag != None:
+            self.log(str(qq) + ' -- ' + flag)
+            self.table_result(row, auth='未修改')
         else:
-            if token_flag == False:
-                print("上传失败 cookie失效 -- " + str(self.qq))
-                return
-            if not qzone.creat_img():
-                print("相册创建失败 -- " + str(self.qq))
-                return
-            elif not qzone.upload_img():
-                print("上传图片失败 -- " + str(self.qq))
-                return
-            else:
-                print("上传成功 -- " + str(self.qq))
-                return
-        pass
+            self.table_result(row, auth='所有人')
+        num, flag = qzone.friend_num()
+        if flag != None:
+            self.log(str(qq) + ' -- ' + flag)
+            self.table_result(row, friend_num='未获取')
+        else:
+            self.table_result(row, friend_num=str(num))
+
+        flag = qzone.creat_img()
+        if flag != None:
+            self.log(str(qq) + ' -- ' + flag)
+            self.table_result(row, flag=flag)
+            self.log(str(qq) + ' -- ' + "相册创建失败")
+            return
+        flag = qzone.upload_img()
+        if flag != None:
+            self.log(str(qq) + ' -- ' + flag)
+            self.table_result(row, flag=flag)
+            self.log(str(qq) + ' -- ' + "上传图片失败")
+            return
+        self.tableWidget.setItem(row, 4, QTableWidgetItem('成功'))
+        self.log(str(qq) + ' -- ' + "上传成功")
+        self.success_num += 1
+        self.successLable.setText(str(self.success_num))
+
 
     def set_proxy(self):
         proxy_url = self.ipEdit.toPlainText()
@@ -349,8 +399,11 @@ class Ui_MainWindow(object):
             self.log(proxy.text)
         except:
             self.log('输入的代理有误')
+            return False
         else:
             self.proxy = proxy.text
+            proxy_ip = self.proxy.split('\n')
+            self.proxy_len = len(proxy_ip)
 
     def get_cookie(self, filePath):
         for line in fileinput.input(filePath):
@@ -364,35 +417,80 @@ class Ui_MainWindow(object):
             qq = sp1[0]
             pwd = sp1[1]
             cookies = sp1[2].strip(' ')
-            cookie_array = cookies.split(';')
-            cookie = {}
-            for cookie_element in cookie_array:
-                cookie_element = cookie_element.strip(' ')
-                ck = cookie_element.split('=')
-                if len(ck) == 2:
-                    cookie[ck[0]] = ck[1]
-                else:
-                    pass
+            # cookie_array = cookies.split(';')
+            # cookie = {}
+            # for cookie_element in cookie_array:
+            #     cookie_element = cookie_element.strip(' ')
+            #     ck = cookie_element.split('=')
+            #     if len(ck) == 2:
+            #         cookie[ck[0]] = ck[1]
+            #     else:
+            #         pass
             # print("cookie",cookie)
             # print("line", line)
             data = [qq, pwd, cookies]
             # data = [cookie, qq, line]
+
             self.tableCK(data)
             # queue.put(data)
 
     def tableCK(self, data):
+
+        try:
+            proxy = self.proxy
+        except:
+            self.log("先设置代理")
+            return
+        if proxy.find('{') >= 0:
+            self.log(proxy)
+            return
 
         rowCount = self.tableWidget.rowCount()
         self.tableWidget.insertRow(rowCount)
         self.tableWidget.setItem(rowCount,0,QTableWidgetItem(data[0]))
         self.tableWidget.setItem(rowCount,1,QTableWidgetItem(data[1]))
         self.tableWidget.setItem(rowCount,2,QTableWidgetItem(data[2]))
+        qq = data[0]
+        cookies = data[2]
+        cookie_array = cookies.split(';')
+        cookie = {}
+        for cookie_element in cookie_array:
+            cookie_element = cookie_element.strip(' ')
+            ck = cookie_element.split('=')
+            if len(ck) == 2:
+                cookie[ck[0]] = ck[1]
+            else:
+                pass
+
+        proxy_ip = proxy.split('\n')
+        if self.proxy_len <= 1:
+            if not self.set_proxy():
+                return
+        self.proxy_len = self.proxy_len-1
+        print(proxy_ip[self.proxy_len])
+        data = [qq, cookie, rowCount, proxy_ip[self.proxy_len]]
+        queue.put(data)
+
 
     def log(self, log_str):
         time_str = time.strftime("%Y/%m/%d 上午%H:%M:%S", time.localtime())
         self.logBrowser.append(time_str + ' ---- ' + log_str)
         self.cursor = self.logBrowser.textCursor()
         self.logBrowser.moveCursor(self.cursor.End)
+
+    def table_result(self, row, flag='', auth='', friend_num=''):
+        print('auth', auth)
+        if auth != '':
+            self.tableWidget.setItem(row, 3, QTableWidgetItem(auth))
+        if friend_num != '':
+            self.tableWidget.setItem(row, 5, QTableWidgetItem(friend_num))
+        if flag != '':
+            self.tableWidget.setItem(row, 4, QTableWidgetItem('失败'))
+            self.tableWidget.setItem(row, 6, QTableWidgetItem(flag))
+            self.error_num += 1
+            self.failLabel.setText(str(self.error_num))
+
+
 
 
 
@@ -402,4 +500,5 @@ if __name__ == '__main__':
     ui = Ui_MainWindow()
     ui.setupUi(widgets)
     widgets.show()
+    queue = Queue()
     sys.exit(app.exec_())
