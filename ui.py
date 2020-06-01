@@ -18,6 +18,7 @@ from queue import Queue
 import cv2
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import PyQt5.sip
@@ -37,7 +38,6 @@ class Ui_MainWindow(object):
 
     success_num = 0
     error_num = 0
-
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1082, 600)
@@ -130,6 +130,16 @@ class Ui_MainWindow(object):
         self.picButton = QtWidgets.QPushButton(self.centralwidget)
         self.picButton.setGeometry(QtCore.QRect(960, 40, 100, 40))
         self.picButton.setObjectName("picButton")
+        self.picEdit = QtWidgets.QLineEdit(self.centralwidget)
+        self.picEdit.setGeometry(QtCore.QRect(960, 20, 50, 20))
+        self.picEdit.setValidator(QIntValidator())  # 空的整数校验
+        self.picEdit.setMaxLength(10)  # 最多输入4位，即不超过9999
+        self.picEdit.setAlignment(Qt.AlignRight)
+        self.picEdit.setPlaceholderText('40000')
+        self.picEdit.setObjectName("picEdit")
+        self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.radioButton.setGeometry(QtCore.QRect(1020, 20, 50, 20))
+        self.radioButton.setObjectName("radioButton")
         self.ckButton = QtWidgets.QPushButton(self.centralwidget)
         self.ckButton.setGeometry(QtCore.QRect(960, 130, 100, 40))
         self.ckButton.setObjectName("ckButton")
@@ -279,7 +289,7 @@ class Ui_MainWindow(object):
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'仿宋\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
 "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">输入文本</p></body></html>"))
-
+        self.radioButton.setText(_translate("MainWindow", "灰色"))
     def openfile(self):
         openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择ck文件", "./","All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
@@ -292,15 +302,22 @@ class Ui_MainWindow(object):
     def openImg(self):
         openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择img文件", "./","All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
+        print(type(openFile))
         if openFile == '':
             self.log('未选择图片')
             return
         self.log('选中'+str(openFile))
-        img = cv2.imread(openFile, cv2.IMREAD_GRAYSCALE)
+        if self.radioButton.isChecked():
+            img = cv2.imread(openFile, cv2.IMREAD_GRAYSCALE)
+        else:
+            img = cv2.imread(openFile)
+
         sp = img.shape
         self.log('处理图片中，请等待...')
-        rand = random.randint(40001,50000)
-        for i in range(40000):  # 生成1000个噪点
+        rand = self.picEdit.text()
+        if rand is None or rand =='':
+            rand = 40500
+        for i in range(int(rand)):  # 生成1000个噪点
             a = random.randint(0, int(sp[0])-1)
             b = random.randint(0, int(sp[1])-1)
             img[a, b] = 0
@@ -404,6 +421,7 @@ class Ui_MainWindow(object):
             self.proxy = proxy.text
             proxy_ip = self.proxy.split('\n')
             self.proxy_len = len(proxy_ip)
+            return True
 
     def get_cookie(self, filePath):
         for line in fileinput.input(filePath):
@@ -463,17 +481,22 @@ class Ui_MainWindow(object):
                 pass
 
         proxy_ip = proxy.split('\n')
-        if self.proxy_len <= 1:
+        if self.proxy_len <= 0:
+            print('qq',data[0])
             if not self.set_proxy():
+                print(data[0])
                 return
+            else:
+                proxy = self.proxy
+                proxy_ip = proxy.split('\n')
         self.proxy_len = self.proxy_len-1
-        print(proxy_ip[self.proxy_len])
+        print(proxy_ip[self.proxy_len], self.proxy_len, data[0])
         data = [qq, cookie, rowCount, proxy_ip[self.proxy_len]]
         queue.put(data)
 
 
     def log(self, log_str):
-        time_str = time.strftime("%Y/%m/%d 上午%H:%M:%S", time.localtime())
+        time_str = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
         self.logBrowser.append(time_str + ' ---- ' + log_str)
         self.cursor = self.logBrowser.textCursor()
         self.logBrowser.moveCursor(self.cursor.End)
