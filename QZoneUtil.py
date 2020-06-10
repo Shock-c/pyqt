@@ -89,10 +89,16 @@ class QZoneUtil:
             return err
         try:
             home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
+            if home_page.status_code != 200:
+                home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
+                if home_page.status_code != 200:
+                    return str(home_page.status_code)
         except Exception as e:
             print('异常', e)
             err = '代理异常'
             return err
+        print(home_page.status_code,home_page.text)
+
         self.__qzone_token = re.search(r'window\.g_qzonetoken = \(function\(\)\{ try\{return (.*?);\} catch\(e\)',
                                        home_page.text)
         if not self.__qzone_token:
@@ -678,64 +684,115 @@ class QZoneUtil:
             num = len(friend_info)
             print("num", num)
 
-            qq_num = []
-            for f in friend_info:
-                uin = f['uin']
-                print('uin', uin)
-                msgUrl = 'https://h5.qzone.qq.com/proxy/domain/m.qzone.qq.com/cgi-bin/new/add_msgb?qzonetoken={0}&g_tk={1}'.format(
-                    self.__qzone_token, self.__gtk)
-                referer = 'https%3A%2F%2Fuser.qzone.qq.com%2Fproxy%2Fdomain%2Fqzs.qq.com%2Fqzone%2Fmsgboard%2Fmsgbcanvas.html%23page%3D1'
-                msgData = 'content={0}&hostUin={1}&uin={2}&format=fs&inCharset=utf-8&outCharset=utf-8&iNotice=1&ref=qzone&json=1&g_tk={3}&qzreferrer={4}'.format(
-                    self.forward_text, uin, self.__uin, self.__gtk, referer).encode('utf-8')
-                try:
-                    # try:
-                    #     proxy_rsp = requests.get("http://t.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=100&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2")
-                    #     if proxy_rsp.status_code != 200:
-                    #         continue
-                    #     print(proxy_rsp.text)
-                    #     proxy = proxy_rsp.text
-                    #     proxy_ip = proxy.split('\n')
-                    #     proxy = proxy_ip[0].strip('\r').strip('\n')
-                    #     self.proxy_len = len(proxy_ip)
-                    #     if proxy.find('{') >= 0:
-                    #         print(proxy)
-                    #         return None, proxy
-                    #     self.__session.proxies = {
-                    #         'http': 'http://' + proxy,
-                    #         'https': 'https://' + proxy
-                    #     }
-                    # except Exception as e:
-                    #     print('输入的代理有误',e)
-                    #     continue
-                    for i in range(10):
-                        rsp = self.__session.post(msgUrl, data=msgData)
-                        print(rsp.text)
-                        leaveParam = r'\"message\":\"(.+?)\"'
-                        msg = re.search(leaveParam, rsp.text)
-                        # print(msg)
-                        if msg != None:
-                            print(msg.group(1) + " -- " + str(uin))
-                        codeParam = r'\"code\":(.+?),'
-                        code = re.search(codeParam, rsp.text)
-                        # print(msg)
-                        if code != None:
-                            print(code.group(1) + " -" + str(i) + "- " + str(uin))
-                            if int(code.group(1)) == 0 or int(code.group(1)) == -4010 or int(code.group(1)) == -4017:
-                                qq_num.append(code.group(1) + " -- " + str(uin) + '\n')
-                                print('qq_num', len(qq_num))
-                                time.sleep(20)
-                                break
-                            if int(code.group(1)) == -3000:
-                                return num, 'ck 失效'
-                        time.sleep(30)
-                except Exception as e:
-                    print('留言异常', e)
-                    continue
-            print(qq_num)
-            return num, None
+            # qq_num = []
+            # for f in friend_info:
+            #     uin = f['uin']
+            #     print('uin', uin)
+            #     msgUrl = 'https://h5.qzone.qq.com/proxy/domain/m.qzone.qq.com/cgi-bin/new/add_msgb?qzonetoken={0}&g_tk={1}'.format(
+            #         self.__qzone_token, self.__gtk)
+            #     referer = 'https%3A%2F%2Fuser.qzone.qq.com%2Fproxy%2Fdomain%2Fqzs.qq.com%2Fqzone%2Fmsgboard%2Fmsgbcanvas.html%23page%3D1'
+            #     msgData = 'content={0}&hostUin={1}&uin={2}&format=fs&inCharset=utf-8&outCharset=utf-8&iNotice=1&ref=qzone&json=1&g_tk={3}&qzreferrer={4}'.format(
+            #         self.forward_text, uin, self.__uin, self.__gtk, referer).encode('utf-8')
+            #     try:
+            #         # try:
+            #         #     proxy_rsp = requests.get("http://t.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=100&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2")
+            #         #     if proxy_rsp.status_code != 200:
+            #         #         continue
+            #         #     print(proxy_rsp.text)
+            #         #     proxy = proxy_rsp.text
+            #         #     proxy_ip = proxy.split('\n')
+            #         #     proxy = proxy_ip[0].strip('\r').strip('\n')
+            #         #     self.proxy_len = len(proxy_ip)
+            #         #     if proxy.find('{') >= 0:
+            #         #         print(proxy)
+            #         #         return None, proxy
+            #         #     self.__session.proxies = {
+            #         #         'http': 'http://' + proxy,
+            #         #         'https': 'https://' + proxy
+            #         #     }
+            #         # except Exception as e:
+            #         #     print('输入的代理有误',e)
+            #         #     continue
+            #         for i in range(10):
+            #             rsp = self.__session.post(msgUrl, data=msgData)
+            #             print(rsp.text)
+            #             leaveParam = r'\"message\":\"(.+?)\"'
+            #             msg = re.search(leaveParam, rsp.text)
+            #             # print(msg)
+            #             if msg != None:
+            #                 print(msg.group(1) + " -- " + str(uin))
+            #             codeParam = r'\"code\":(.+?),'
+            #             code = re.search(codeParam, rsp.text)
+            #             # print(msg)
+            #             if code != None:
+            #                 print(code.group(1) + " -" + str(i) + "- " + str(uin))
+            #                 if int(code.group(1)) == 0 or int(code.group(1)) == -4010 or int(code.group(1)) == -4017:
+            #                     qq_num.append(code.group(1) + " -- " + str(uin) + '\n')
+            #                     print('qq_num', len(qq_num))
+            #                     time.sleep(20)
+            #                     break
+            #                 if int(code.group(1)) == -3000:
+            #                     return num, 'ck 失效'
+            #             time.sleep(30)
+            #     except Exception as e:
+            #         print('留言异常', e)
+            #         continue
+            # print(qq_num)
+            return friend_info, None
         except:
             return None, '未获取好友数量'
 
+    def leave(self, uin):
+        print('uin', uin)
+        msgUrl = 'https://h5.qzone.qq.com/proxy/domain/m.qzone.qq.com/cgi-bin/new/add_msgb?qzonetoken={0}&g_tk={1}'.format(
+            self.__qzone_token, self.__gtk)
+        referer = 'https%3A%2F%2Fuser.qzone.qq.com%2Fproxy%2Fdomain%2Fqzs.qq.com%2Fqzone%2Fmsgboard%2Fmsgbcanvas.html%23page%3D1'
+        msgData = 'content={0}&hostUin={1}&uin={2}&format=fs&inCharset=utf-8&outCharset=utf-8&iNotice=1&ref=qzone&json=1&g_tk={3}&qzreferrer={4}'.format(
+            self.forward_text, uin, self.__uin, self.__gtk, referer).encode('utf-8')
+        try:
+            # try:
+            #     proxy_rsp = requests.get("http://t.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=100&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2")
+            #     if proxy_rsp.status_code != 200:
+            #         continue
+            #     print(proxy_rsp.text)
+            #     proxy = proxy_rsp.text
+            #     proxy_ip = proxy.split('\n')
+            #     proxy = proxy_ip[0].strip('\r').strip('\n')
+            #     self.proxy_len = len(proxy_ip)
+            #     if proxy.find('{') >= 0:
+            #         print(proxy)
+            #         return None, proxy
+            #     self.__session.proxies = {
+            #         'http': 'http://' + proxy,
+            #         'https': 'https://' + proxy
+            #     }
+            # except Exception as e:
+            #     print('输入的代理有误',e)
+            #     continue
+            rsp = self.__session.post(msgUrl, data=msgData)
+            print(rsp.text)
+            leaveParam = r'\"message\":\"(.+?)\"'
+            msg = re.search(leaveParam, rsp.text)
+            # print(msg)
+            if msg != None:
+                print(msg.group(1) + " -- " + str(uin))
+            codeParam = r'\"code\":(.+?),'
+            code = re.search(codeParam, rsp.text)
+            # print(msg)
+            if code != None:
+                print(code.group(1) + " -- " + str(uin))
+                if int(code.group(1)) == 0 or int(code.group(1)) == -4010 or int(code.group(1)) == -4017:
+
+                    return code.group(1), msg.group(1)
+                elif int(code.group(1)) == -3000:
+                    return None, msg.group(1)
+                elif int(code.group(1)) == -4012:
+                    return -4012, msg.group(1)
+                else:
+                    return None, msg.group(1)
+        except Exception as e:
+            print('留言异常', e)
+            return None, '异常'
 
     def inquire_img(self):
 
