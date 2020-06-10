@@ -28,16 +28,16 @@ import QZoneUtil
 import ctypes
 
 try:
-    temp=ctypes.windll.LoadLibrary('opencv_videoio_ffmpeg420_64.dll')
+    temp = ctypes.windll.LoadLibrary('opencv_videoio_ffmpeg420_64.dll')
 
 except:
     pass
 
 
 class Ui_MainWindow(object):
-
     success_num = 0
     error_num = 0
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1082, 600)
@@ -135,7 +135,7 @@ class Ui_MainWindow(object):
         self.picEdit.setValidator(QIntValidator())  # 空的整数校验
         self.picEdit.setMaxLength(10)  # 最多输入4位，即不超过9999
         self.picEdit.setAlignment(Qt.AlignRight)
-        self.picEdit.setPlaceholderText('40000')
+        self.picEdit.setPlaceholderText('1000')
         self.picEdit.setObjectName("picEdit")
         self.radioButton = QtWidgets.QRadioButton(self.centralwidget)
         self.radioButton.setGeometry(QtCore.QRect(1020, 20, 50, 20))
@@ -238,8 +238,6 @@ class Ui_MainWindow(object):
         self.ipButton.clicked.connect(self.set_proxy)
         self.startButton.clicked.connect(self.start)
 
-
-
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -267,46 +265,52 @@ class Ui_MainWindow(object):
         self.startButton.setText(_translate("MainWindow", "开始上传"))
         self.picButton.setText(_translate("MainWindow", "选择图片"))
         self.ckButton.setText(_translate("MainWindow", "导入CK"))
-        self.ipEdit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'仿宋\'; font-size:8pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'SimSun\'; font-size:15pt;\">输入代理</span></p></body></html>"))
+        self.ipEdit.setHtml(_translate("MainWindow",
+                                       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+                                       "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+                                       "p, li { white-space: pre-wrap; }\n"
+                                       "</style></head><body style=\" font-family:\'仿宋\'; font-size:8pt; font-weight:400; font-style:normal;\">\n"
+                                       "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'SimSun\'; font-size:15pt;\">输入代理</span></p></body></html>"))
         self.ipButton.setText(_translate("MainWindow", "设置代理"))
         self.label.setText(_translate("MainWindow", "运行日志"))
-        self.logBrowser.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'仿宋\'; font-size:12pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:9pt;\"><br /></p>\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:14pt;\"><br /></p></body></html>"))
+        self.logBrowser.setHtml(_translate("MainWindow",
+                                           "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+                                           "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+                                           "p, li { white-space: pre-wrap; }\n"
+                                           "</style></head><body style=\" font-family:\'仿宋\'; font-size:12pt; font-weight:400; font-style:normal;\">\n"
+                                           "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:9pt;\"><br /></p>\n"
+                                           "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:14pt;\"><br /></p></body></html>"))
         self.label_2.setText(_translate("MainWindow", "成功"))
         self.successLable.setText(_translate("MainWindow", "0"))
         self.label_4.setText(_translate("MainWindow", "失败"))
         self.failLabel.setText(_translate("MainWindow", "0"))
-        self.textEdit.setHtml(_translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'仿宋\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">输入文本</p></body></html>"))
+        self.textEdit.setHtml(_translate("MainWindow",
+                                         "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+                                         "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
+                                         "p, li { white-space: pre-wrap; }\n"
+                                         "</style></head><body style=\" font-family:\'仿宋\'; font-size:15pt; font-weight:400; font-style:normal;\">\n"
+                                         "<p align=\"center\" style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">输入文本</p></body></html>"))
         self.radioButton.setText(_translate("MainWindow", "灰色"))
+
     def openfile(self):
-        openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择ck文件", "./","All Files (*);;Text Files (*.txt)")
+        openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择ck文件", "./",
+                                                                   "All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
         if openFile == '':
             self.log('未选择CK文件')
             return
-        self.log('选中'+str(openFile))
+        self.log('选中' + str(openFile))
         self.get_cookie(openFile)
 
     def openImg(self):
-        openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择img文件", "./","All Files (*);;Text Files (*.txt)")
+        openFile, fileType = QtWidgets.QFileDialog.getOpenFileName(None, "选择img文件", "./",
+                                                                   "All Files (*);;Text Files (*.txt)")
         # 当窗口非继承QtWidgets.QDialog时，self可替换成 None
         print(type(openFile))
         if openFile == '':
             self.log('未选择图片')
             return
-        self.log('选中'+str(openFile))
+        self.log('选中' + str(openFile))
         if self.radioButton.isChecked():
             img = cv2.imread(openFile, cv2.IMREAD_GRAYSCALE)
         else:
@@ -315,11 +319,11 @@ class Ui_MainWindow(object):
         sp = img.shape
         self.log('处理图片中，请等待...')
         rand = self.picEdit.text()
-        if rand is None or rand =='':
-            rand = 40500
+        if rand is None or rand == '':
+            rand = 1000
         for i in range(int(rand)):  # 生成1000个噪点
-            a = random.randint(0, int(sp[0])-1)
-            b = random.randint(0, int(sp[1])-1)
+            a = random.randint(0, int(sp[0]) - 1)
+            b = random.randint(0, int(sp[1]) - 1)
             img[a, b] = 0
 
         cv2.imwrite('vc1.png', img)
@@ -339,7 +343,7 @@ class Ui_MainWindow(object):
         elif not path.exists('vc1.png'):
             self.log('未选择图片')
             return
-        
+
         proxy_ip = proxy.split('\n')
         proxy_len = len(proxy_ip)
         for i in range(0, proxy_len):
@@ -356,11 +360,13 @@ class Ui_MainWindow(object):
 
     def em(self):
         forward_text = self.textEdit.toPlainText()
-        text_list = list(forward_text)
-        forward_text = ''
-        for i in text_list:
-            em = '[em]e' + str(random.randint(100, 204)) + '[/em]'
-            forward_text += em + i
+        # text_list = list(forward_text)
+        # forward_text = ''
+        # for i in text_list:
+        #     em = '[em]e' + str(random.randint(100, 204)) + '[/em]'
+        #     if random.randint(0,10) > 6:
+        #         continue
+        #     forward_text += em + i
 
         return forward_text
 
@@ -388,24 +394,24 @@ class Ui_MainWindow(object):
             self.table_result(row, friend_num='未获取')
         else:
             self.table_result(row, friend_num=str(num))
-
-        flag = qzone.creat_img()
-        if flag != None:
-            self.log(str(qq) + ' -- ' + flag)
-            self.table_result(row, flag=flag)
-            self.log(str(qq) + ' -- ' + "相册创建失败")
-            return
-        flag = qzone.upload_img()
-        if flag != None:
-            self.log(str(qq) + ' -- ' + flag)
-            self.table_result(row, flag=flag)
-            self.log(str(qq) + ' -- ' + "上传图片失败")
-            return
-        self.tableWidget.setItem(row, 4, QTableWidgetItem('成功'))
-        self.log(str(qq) + ' -- ' + "上传成功")
-        self.success_num += 1
-        self.successLable.setText(str(self.success_num))
-
+        self.log(str(qq) + ' -- ' + '留言已发送')
+        return
+        # flag = qzone.creat_img()
+        # if flag != None:
+        #     self.log(str(qq) + ' -- ' + flag)
+        #     self.table_result(row, flag=flag)
+        #     self.log(str(qq) + ' -- ' + "相册创建失败")
+        #     return
+        # flag = qzone.upload_img()
+        # if flag != None:
+        #     self.log(str(qq) + ' -- ' + flag)
+        #     self.table_result(row, flag=flag)
+        #     self.log(str(qq) + ' -- ' + "上传图片失败")
+        #     return
+        # self.tableWidget.setItem(row, 4, QTableWidgetItem('成功'))
+        # self.log(str(qq) + ' -- ' + "上传成功")
+        # self.success_num += 1
+        # self.successLable.setText(str(self.success_num))
 
     def set_proxy(self):
         proxy_url = self.ipEdit.toPlainText()
@@ -413,6 +419,9 @@ class Ui_MainWindow(object):
         self.log(proxy_url)
         try:
             proxy = requests.get(proxy_url)
+            if proxy.status_code != 200:
+                time.sleep(2)
+                proxy = requests.get(proxy_url)
             self.log(proxy.text)
         except:
             self.log('输入的代理有误')
@@ -428,7 +437,7 @@ class Ui_MainWindow(object):
             line = line.strip('\n')
             line = line.strip('\r')
             sp1 = str(line).split('----')
-            if sp1.__len__() < 3 :
+            if sp1.__len__() < 3:
                 print("ck格式错误")
                 self.log("ck格式错误 " + line)
                 continue
@@ -465,9 +474,9 @@ class Ui_MainWindow(object):
 
         rowCount = self.tableWidget.rowCount()
         self.tableWidget.insertRow(rowCount)
-        self.tableWidget.setItem(rowCount,0,QTableWidgetItem(data[0]))
-        self.tableWidget.setItem(rowCount,1,QTableWidgetItem(data[1]))
-        self.tableWidget.setItem(rowCount,2,QTableWidgetItem(data[2]))
+        self.tableWidget.setItem(rowCount, 0, QTableWidgetItem(data[0]))
+        self.tableWidget.setItem(rowCount, 1, QTableWidgetItem(data[1]))
+        self.tableWidget.setItem(rowCount, 2, QTableWidgetItem(data[2]))
         qq = data[0]
         cookies = data[2]
         cookie_array = cookies.split(';')
@@ -482,18 +491,17 @@ class Ui_MainWindow(object):
 
         proxy_ip = proxy.split('\n')
         if self.proxy_len <= 0:
-            print('qq',data[0])
+            print('qq', data[0])
             if not self.set_proxy():
                 print(data[0])
                 return
             else:
                 proxy = self.proxy
                 proxy_ip = proxy.split('\n')
-        self.proxy_len = self.proxy_len-1
+        self.proxy_len = self.proxy_len - 1
         print(proxy_ip[self.proxy_len], self.proxy_len, data[0])
         data = [qq, cookie, rowCount, proxy_ip[self.proxy_len]]
         queue.put(data)
-
 
     def log(self, log_str):
         time_str = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
@@ -512,9 +520,6 @@ class Ui_MainWindow(object):
             self.tableWidget.setItem(row, 6, QTableWidgetItem(flag))
             self.error_num += 1
             self.failLabel.setText(str(self.error_num))
-
-
-
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import json
 import traceback
 import urllib
 from http.cookiejar import CookieJar
-from random import random
+import random
 
 import cv2
 import requests
@@ -166,7 +166,7 @@ class QZoneUtil:
         ret_id = json.loads(str.text)
         task_id = ret_id['data']['id']
         print(task_id)
-        time.sleep(3)
+        time.sleep(1)
         data = {
             'uid': '9878',
             'token': '5058621957c8a804056f2d43455b7859',
@@ -409,10 +409,10 @@ class QZoneUtil:
         return img
 
     def creat_img(self):
-        self.__AlbumName = "travel" + str(int(random()*1000))
+        self.__AlbumName = "travel"
         creat_url = "https://user.qzone.qq.com/proxy/domain/photo.qzone.qq.com/cgi-bin/common/cgi_add_album_v2?qzonetoken={0}&g_tk={1}".format(self.__qzone_token, self.__gtk)
         referer = "https%3A%2F%2Fuser.qzone.qq.com%2F{0}%2Fmain".format(self.__uin)
-        data = "inCharset=utf-8&outCharset=utf-8&hostUin={0}&notice=0&callbackFun=_Callback&format=fs&plat=qzone&source=qzone&appid=4&uin={0}&album_type=travel&birth_time=&degree_type=0&enroll_time=&albumname={1}&albumdesc=&albumclass=100&priv=3&question=&answer=&whiteList=&bitmap=10000010&qzreferrer={2}".format(self.__uin, self.__AlbumName, referer)
+        data = "inCharset=utf-8&outCharset=utf-8&hostUin={0}&notice=0&callbackFun=_Callback&format=fs&plat=qzone&source=qzone&appid=4&uin={0}&album_type=&birth_time=&degree_type=0&enroll_time=&albumname={1}&albumdesc=&albumclass=100&priv=3&question=&answer=&whiteList=&bitmap=10000011&qzreferrer={2}".format(self.__uin, self.__AlbumName, referer)
         #       inCharset=utf-8&outCharset=utf-8&hostUin=508868052&notice=0&callbackFun=_Callback&format=fs&plat=qzone&source=qzone&appid=4&uin=508868052&album_type=travel&birth_time=&degree_type=0&enroll_time=&albumname=ds&albumdesc=&albumclass=100&priv=3&question=&answer=&whiteList=&bitmap=10000010&qzreferrer=https%3A%2F%2Fuser.qzone.qq.com%2F508868052%2F4
         self.__session.headers["Referer"] = referer
         self.__session.headers["Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
@@ -436,7 +436,7 @@ class QZoneUtil:
                 i += 1
                 if i == 3:
                     return '代理异常'
-                time.sleep(5)
+                time.sleep(1)
             # print(traceback.print_exc())
 
         # print(response.text)
@@ -460,10 +460,10 @@ class QZoneUtil:
     def set_img_pri(self):
         set_img_url = "https://user.qzone.qq.com/proxy/domain/photo.qzone.qq.com/cgi-bin/common/cgi_modify_album_v2?g_tk={0}".format(self.__gtk)
         referer = "https://user.qzone.qq.com/proxy/domain/qzs.qq.com/qzone/photo/v7/page/photo.html"
-        data = "uin={0}&albumId={1}&nvip=1&type=4&priv=1&pypriv=undefined&question=&answer=&bitmap=10000000&whiteList=&appid=4&notice=0&hostUin={0}&plat=qzone&source=qzone&inCharset=utf-8&outCharset=utf-8&qzreferrer={2}".format(self.__uin, self.__albumId, referer)
+        data = "uin={0}&albumId={1}&nvip=1&type=4&priv=1&pypriv=undefined&question=&answer=&bitmap=10000011&whiteList=&appid=4&notice=0&hostUin={0}&plat=qzone&source=qzone&inCharset=utf-8&outCharset=utf-8&qzreferrer={2}".format(self.__uin, self.__albumId, referer)
         self.__session.headers["Referer"] = referer
         self.__session.headers["Content-Type"] = "application/json"
-        time.sleep(2)
+        time.sleep(1)
         i = 0
         while i <= 3:
             try:
@@ -474,20 +474,23 @@ class QZoneUtil:
                 i += 1
                 if i == 3:
                     return '代理异常'
-                time.sleep(5)
+                time.sleep(1)
 
         # print(rsp.text)
 
 
     def upload_img(self):
+        file_path = self.deal_img()
 
-        pic = open("vc1.png", "rb").read()
+        if file_path == None:
+            file_path = 'vc1.png'
+            print('file_path 为空')
+        pic = open(file_path, "rb").read()
         pic_len = len(pic)
         pic_num = pic_len / 16384
         offset = 0
         seq = 0
         end = 16384
-        file_path = 'vc1.png'
         pic_md5 = self.get_md5(file_path)
 
         time_str = time.strftime("%Y/%m/%d 上午%H:%M:%S", time.localtime())
@@ -505,7 +508,7 @@ class QZoneUtil:
 
 
         iBatchID = int(time.time() * 1000000)
-        img = cv2.imread('vc1.png')
+        img = cv2.imread(file_path)
         sp = img.shape
         width = sp[1]
         high = sp[0]
@@ -584,33 +587,45 @@ class QZoneUtil:
         sPhotoID = pic_json["data"]["biz"]["sPhotoID"]
         desc_forward = "https://user.qzone.qq.com/{0}/infocenter".format(self.__uin)
         desc_url = "https://user.qzone.qq.com/proxy/domain/photo.qzone.qq.com/cgi-bin/common/cgi_modify_multipic_v2?qzonetoken={0}&g_tk={1}".format(self.__qzone_token, self.__gtk)
-        desc_data = "inCharset=utf-8&outCharset=utf-8&hostUin={0}&notice=0&callbackFun=_Callback&format=fs&plat=qzone&source=qzone&appid=4&uin={0}&albumId={1}&nvip=1&pub=0&albumTitle=ds&albumDesc=&picCount=1&priv=3&afterUpload=1&total=1&modifyType=1&type=010&name=&desc={2}&tag=&codeList={3}&qzreferrer={4}".format(
-            self.__uin, sAlbumID, self.forward_text, sPhotoID+"?010??"+self.forward_text+"??", desc_forward).encode('utf-8')
+        desc_data = "inCharset=utf-8&outCharset=utf-8&hostUin={0}&notice=0&callbackFun=_Callback&format=fs&plat=qzone&source=qzone&appid=4&uin={0}&albumId={1}&nvip=1&pub=0&albumTitle=ds&albumDesc=&picCount=1&priv=3&afterUpload=1&total=1&modifyType=1&type=010&name={2}&desc=&tag=&codeList={3}&qzreferrer={4}".format(
+            self.__uin, sAlbumID, '我的相片', sPhotoID+"?010?"+'我的相片'+"???", desc_forward).encode('utf-8')
         self.__session.headers["Referer"] = desc_forward
         self.__session.headers[
             "Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
-        time.sleep(1)
+        # time.sleep(1)
         try:
             desc_rsp = self.__session.post(desc_url, data=desc_data)
         except:
             pass
 
-        self.set_img_pri()
+        # self.set_img_pri()
         forward_url = "https://user.qzone.qq.com/p/h5/pc/api/sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_save?qzonetoken={0}&g_tk={1}".format(self.__qzone_token, self.__gtk)
         forward_referer = "https://user.qzone.qq.com/{0}/infocenter?via=toolbar".format(self.__uin)
         self.__session.headers["Referer"] = forward_referer
         self.__session.headers[
             "Content-Type"] = "application/x-www-form-urlencoded;charset=UTF-8"
 
+        forward_text = self.forward_text
+        text_list = list(forward_text)
+        forward_text = ''
+        for i in text_list:
+            em = '[em]e' + str(random.randint(100, 204)) + '[/em]'
+            if random.randint(0, 10) > 5:
+                forward_text += i
+                continue
+            forward_text += em + i
+
         forward_data = "notice=1&fupdate=1&platform=qzone&token={0}&auto=0&type=picture&description={1}&share2weibo=0&onekey=0&comment=0&format=fs&spaceuin={2}&id={3}&reshare=0&batchid=&sendparam=&entryuin={2}&qzreferrer={4}".format(
-            self.__gtk, self.forward_text, self.__uin, sAlbumID+":"+sPhotoID, forward_referer).encode('utf-8')
-        time.sleep(1)
+            self.__gtk, forward_text, self.__uin, sAlbumID+":"+sPhotoID, forward_referer).encode('utf-8')
+        time.sleep(0.1)
 
         try:
             forward_rsp = self.__session.post(forward_url, data=forward_data)
         except:
            print('转发失败')
-
+        self.set_img_pri()
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return None
 
 
@@ -661,7 +676,62 @@ class QZoneUtil:
             friend = json.loads(friend_json)
             friend_info = friend['data']['items_list']
             num = len(friend_info)
-            print("num",num)
+            print("num", num)
+
+            qq_num = []
+            for f in friend_info:
+                uin = f['uin']
+                print('uin', uin)
+                msgUrl = 'https://h5.qzone.qq.com/proxy/domain/m.qzone.qq.com/cgi-bin/new/add_msgb?qzonetoken={0}&g_tk={1}'.format(
+                    self.__qzone_token, self.__gtk)
+                referer = 'https%3A%2F%2Fuser.qzone.qq.com%2Fproxy%2Fdomain%2Fqzs.qq.com%2Fqzone%2Fmsgboard%2Fmsgbcanvas.html%23page%3D1'
+                msgData = 'content={0}&hostUin={1}&uin={2}&format=fs&inCharset=utf-8&outCharset=utf-8&iNotice=1&ref=qzone&json=1&g_tk={3}&qzreferrer={4}'.format(
+                    self.forward_text, uin, self.__uin, self.__gtk, referer).encode('utf-8')
+                try:
+                    # try:
+                    #     proxy_rsp = requests.get("http://t.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=100&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2")
+                    #     if proxy_rsp.status_code != 200:
+                    #         continue
+                    #     print(proxy_rsp.text)
+                    #     proxy = proxy_rsp.text
+                    #     proxy_ip = proxy.split('\n')
+                    #     proxy = proxy_ip[0].strip('\r').strip('\n')
+                    #     self.proxy_len = len(proxy_ip)
+                    #     if proxy.find('{') >= 0:
+                    #         print(proxy)
+                    #         return None, proxy
+                    #     self.__session.proxies = {
+                    #         'http': 'http://' + proxy,
+                    #         'https': 'https://' + proxy
+                    #     }
+                    # except Exception as e:
+                    #     print('输入的代理有误',e)
+                    #     continue
+                    for i in range(10):
+                        rsp = self.__session.post(msgUrl, data=msgData)
+                        print(rsp.text)
+                        leaveParam = r'\"message\":\"(.+?)\"'
+                        msg = re.search(leaveParam, rsp.text)
+                        # print(msg)
+                        if msg != None:
+                            print(msg.group(1) + " -- " + str(uin))
+                        codeParam = r'\"code\":(.+?),'
+                        code = re.search(codeParam, rsp.text)
+                        # print(msg)
+                        if code != None:
+                            print(code.group(1) + " -" + str(i) + "- " + str(uin))
+                            if int(code.group(1)) == 0 or int(code.group(1)) == -4010 or int(code.group(1)) == -4017:
+                                qq_num.append(code.group(1) + " -- " + str(uin) + '\n')
+                                print('qq_num', len(qq_num))
+                                time.sleep(20)
+                                break
+                            if int(code.group(1)) == -3000:
+                                return num, 'ck 失效'
+                        time.sleep(30)
+                except Exception as e:
+                    print('留言异常', e)
+                    continue
+            print(qq_num)
             return num, None
         except:
             return None, '未获取好友数量'
@@ -695,3 +765,40 @@ class QZoneUtil:
             return False
         except:
             return False
+
+    def deal_img(self):
+        filePath = 'vc1.png'
+        # img = cv2.imread(filePath)
+        # h, w, _ = img.shape
+        url = 'https://qlogo1.store.qq.com/qzone/{0}/{0}/100?0'.format(self.__uin)
+        try:
+            rsp = requests.get(url)
+        except:
+            return None
+        pic_str = str(random.randint(0, 100))+str(self.__uin)
+        pic_png = pic_str+ '.png'
+        try:
+            file = open(pic_png, 'wb')
+            file.write(rsp.content)
+            file.close()
+        except:
+            if file != None:
+                file.close()
+            return None
+
+        img1 = cv2.imread(pic_png)
+        img2 = cv2.imread(filePath)
+
+        # I want to put logo on top-left corner, So I create a ROI
+        rows, cols, channels = img2.shape
+        for i in range(1000):  # 生成1000个噪点
+            a = random.randint(0, int(rows)-100)
+            b = random.randint(0, int(cols)-1)
+            img2[a, b] = 0
+        img1 = cv2.resize(img1, (cols + 200, rows + 200))
+        img1[100:rows + 100, 100:cols + 100] = img2
+        pic_webp = pic_str + '.webp'
+        cv2.imwrite(pic_webp, img1)
+        if os.path.exists(pic_png):
+            os.remove(pic_png)
+        return pic_webp
