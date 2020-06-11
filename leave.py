@@ -8,11 +8,14 @@
 import _thread
 import fileinput
 import sys
+import threading
 import time
 from queue import Queue
 
 import requests
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QTableWidgetItem
 
 import QZoneUtil
@@ -84,6 +87,16 @@ class Ui_MainWindow(object):
         self.leave_Button = QtWidgets.QPushButton(self.centralwidget)
         self.leave_Button.setGeometry(QtCore.QRect(1010, 290, 101, 41))
         self.leave_Button.setObjectName("leave_Button")
+        self.ip_edit = QtWidgets.QLineEdit(self.centralwidget)
+        self.ip_edit.setGeometry(QtCore.QRect(720, 330, 291, 40))
+        self.ip_edit.setValidator(QIntValidator())  # 空的整数校验
+        self.ip_edit.setMaxLength(4)  # 最多输入4位，即不超过9999
+        self.ip_edit.setAlignment(Qt.AlignRight)
+        self.ip_edit.setPlaceholderText('1')
+        self.ip_edit.setObjectName("ip_edit")
+        self.ip_Button = QtWidgets.QPushButton(self.centralwidget)
+        self.ip_Button.setGeometry(QtCore.QRect(1010, 330, 101, 40))
+        self.ip_Button.setObjectName("ip_Button")
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(733, 501, 71, 41))
         self.label.setText("")
@@ -110,6 +123,7 @@ class Ui_MainWindow(object):
         # self.leave_Button.clicked.connect(self)
         self.proxy_Button.clicked.connect(self.set_proxy)
         self.start_Button.clicked.connect(self.start)
+        self.lock = threading.Lock()
 
 
     def retranslateUi(self, MainWindow):
@@ -142,6 +156,7 @@ class Ui_MainWindow(object):
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:9pt;\"><br /></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'SimSun\'; font-size:14pt;\"><br /></p></body></html>"))
         self.proxy_Button.setText(_translate("MainWindow", "设置代理"))
+        self.ip_Button.setText(_translate("MainWindow", "设置线程"))
         self.leave_Button.setText(_translate("MainWindow", "设置留言"))
         self.ck_Button.setText(_translate("MainWindow", "导入CK"))
         self.start_Button.setText(_translate("MainWindow", "开始"))
@@ -154,38 +169,37 @@ class Ui_MainWindow(object):
             self.log('未选择CK文件')
             return
         self.log('选中' + str(openFile))
-        flag = self.set_proxy()
         self.get_cookie(openFile)
 
     def start(self):
+        thread_num = self.ip_edit.text()
+        if thread_num == '':
+            thread_num = 1
+        print(thread_num)
+        self.log('线程数--'+str(thread_num))
 
-        try:
-            proxy = self.proxy
-        except:
-            self.log("未获取到代理")
+        if self.proxy_len < 1:
+            self.log('代理未设置')
             return
 
-        if proxy.find('{') >= 0:
-            self.log(proxy)
-            return
-        proxy_ip = proxy.split('\n')
-        proxy_len = len(proxy_ip)
-        for i in range(0, proxy_len):
-            _thread.start_new_thread(self.get_list, (proxy_ip[i],))
+        for i in range(0, int(thread_num)):
+            _thread.start_new_thread(self.get_list,())
 
-    def get_list(self, proxy_ip):
+    def get_list(self):
         global queue
-        i = 0
         while True:
             arg = queue.get()
             if arg != None:
-                self.q_leave(int(arg[0]), arg[1], arg[2], arg[3])
-                i += 1
+                ip = self.ip_pool()
+                self.q_leave(int(arg[0]), arg[1], arg[2], ip)
     def q_leave(self, qq, cookie, row, proxy_ip):
         forward_text = self.em()
-        proxy_ip = proxy_ip.strip('\r')
-        proxy_ip = proxy_ip.strip('\n')
         print("proxy_ip", proxy_ip)
+        self.log(str(qq) + ' -- ' + proxy_ip)
+        if proxy_ip == None:
+            self.log(str(qq) + ' -- ' + 'ip为空')
+            self.table_result(row, result='失败', other='ip为空')
+            return
         qzone = QZoneUtil.QZoneUtil(qq, forward_text, row, proxy=proxy_ip)
 
         flag = qzone.login_with_cookie(cookie)
@@ -212,7 +226,7 @@ class Ui_MainWindow(object):
                         return
                     elif code == -4012:
                         self.log(str(qq) + '-' + str(uin) + '-' + msg + '--等待10min')
-                        time.sleep(60)
+                        time.sleep(600)
                     else:
                         self.leave_ta(str(qq), str(uin), msg)
                         self.log(str(qq) + '-' + str(uin) + '-' + msg + '--等待20s')
@@ -274,14 +288,14 @@ class Ui_MainWindow(object):
 
     def tableCK(self, data):
 
-        try:
-            proxy = self.proxy
-        except:
-            self.log("先设置代理")
-            return
-        if proxy.find('{') >= 0:
-            self.log(proxy)
-            return
+        # try:
+        #     proxy = self.proxy
+        # except:
+        #     self.log("先设置代理")
+        #     return
+        # if proxy.find('{') >= 0:
+        #     self.log(proxy)
+        #     return
 
         rowCount = self.tableWidget.rowCount()
         self.tableWidget.insertRow(rowCount)
@@ -299,43 +313,65 @@ class Ui_MainWindow(object):
             else:
                 pass
 
-        proxy_ip = proxy.split('\n')
-        if self.proxy_len <= 0:
-            print('qq', data[0])
-            if not self.set_proxy():
-                print(data[0])
-                return
-            else:
-                proxy = self.proxy
-                proxy_ip = proxy.split('\n')
-        self.proxy_len = self.proxy_len - 1
-        print(proxy_ip[self.proxy_len], self.proxy_len, data[0])
-        data = [qq, cookie, rowCount, proxy_ip[self.proxy_len]]
+        # proxy_ip = proxy.split('\n')
+        # if self.proxy_len <= 0:
+        #     print('qq', data[0])
+        #     if not self.set_proxy():
+        #         print(data[0])
+        #         return
+        #     else:
+        #         proxy = self.proxy
+        #         proxy_ip = proxy.split('\n')
+        # self.proxy_len = self.proxy_len - 1
+        # print(proxy_ip[self.proxy_len], self.proxy_len, data[0])
+        data = [qq, cookie, rowCount]
         queue.put(data)
 
+    def ip_pool(self):
+        try:
+            self.lock.acquire()
+            ip = None
+            while len(self.proxy) <= 0:
+                flag = self.set_proxy()
+                if not flag:
+                    return None
+            ip = self.proxy.pop()
+            ip = ip.strip('\r').strip('\n')
+        except:
+            pass
+        else:
+            self.lock.release()
+            return ip
+
+
     def set_proxy(self):
+
         proxy_url = self.proxy_textEdit.toPlainText()
+        print(proxy_url)
         proxy_url = proxy_url.strip('\n')
         self.log(proxy_url)
         try:
             proxy = requests.get(proxy_url)
-            if proxy.status_code != 200:
-                time.sleep(2)
-                proxy = requests.get(proxy_url)
+            time.sleep(1)
             self.log(proxy.text)
         except:
             self.log('输入的代理有误')
             return False
         else:
-            self.proxy = proxy.text
-            proxy_ip = self.proxy.split('\n')
-            self.proxy_len = len(proxy_ip)
+            if proxy.text.find('{') >= 0:
+                # self.log(proxy.text)
+                return False
+            self.proxy = proxy.text.split('\n')
+            self.proxy_len = len(self.proxy)
             return True
 
 
     def log(self, log_str):
         time_str = time.strftime("%Y/%m/%d %H:%M:%S", time.localtime())
-        self.logBrowser.append(time_str + ' ---- ' + log_str)
+        try:
+            self.logBrowser.append(time_str + ' ---- ' + log_str)
+        except Exception as e:
+            print(e)
         self.cursor = self.logBrowser.textCursor()
         self.logBrowser.moveCursor(self.cursor.End)
 

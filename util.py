@@ -11,6 +11,7 @@ import random
 # http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=5&time=101&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2
 # http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=5&time=100&pro=%E5%B9%BF%E4%B8%9C%E7%9C%81&city=%E7%8F%A0%E6%B5%B7%E5%B8%82&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2
 # http://ip.11jsq.com/index.php/api/entry?method=proxyServer.generate_api_url&packid=0&fa=0&fetch_key=&groupid=0&qty=1&time=2&pro=&city=&port=1&format=txt&ss=1&css=&dt=1&specialTxt=3&specialJson=&usertype=2
+import time
 
 import cv2
 import requests
@@ -84,3 +85,9 @@ cv2.imwrite('vc1.png', img)
 # img1 = cv2.resize(img1, (cols + 200, rows + 200))
 # img1[100:rows + 100, 100:cols + 100] = img2
 # cv2.imwrite(pic_str, img1)
+f ="dsfasdf"
+ck = f.split('s')
+
+for i in range(3):
+    print(ck.pop())
+
