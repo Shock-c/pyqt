@@ -16,6 +16,8 @@ import time
 import cv2
 import requests
 
+import QZoneUtil
+
 filePath = 'dd.png'
 
 img = cv2.imread(filePath)
@@ -88,6 +90,6 @@ cv2.imwrite('vc1.png', img)
 f ="dsfasdf"
 ck = f.split('s')
 
-for i in range(3):
-    print(ck.pop())
+while True:
+    qzone = QZoneUtil.QZoneUtil(qq, forward_text, row, proxy=proxy_ip)
 

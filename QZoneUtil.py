@@ -72,6 +72,20 @@ class QZoneUtil:
             }
 
         self.__uin = uin
+        self.ck_flag = True
+
+    def CK(self):
+        try:
+            url = 'https://user.qzone.qq.com/{0}'.format(self.__uin)
+            referer = 'https://qzone.qq.com/'
+            self.__session.headers["Referer"] = referer
+            # main = self.__session.get(url)
+            home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
+            if home_page.status_code == 200:
+                print("主页",len(home_page.text))
+        except:
+            print('ck 异常')
+            pass
 
     def login_with_cookie(self, cookie):
         for k in cookie:
@@ -90,21 +104,23 @@ class QZoneUtil:
         try:
             home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
             if home_page.status_code != 200:
-                home_page = self.__session.get("https://h5.qzone.qq.com/mqzone/index", verify=False)
-                if home_page.status_code != 200:
-                    return str(home_page.status_code)
+                print(home_page.status_code)
+            print(home_page.text)
         except Exception as e:
             print('异常', e)
             err = '代理异常'
-            return err
-        print(home_page.status_code,home_page.text)
+            # return err
+        # print(home_page.status_code,home_page.text)
 
         self.__qzone_token = re.search(r'window\.g_qzonetoken = \(function\(\)\{ try\{return (.*?);\} catch\(e\)',
                                        home_page.text)
         if not self.__qzone_token:
-            return 'cookie 过期'
-        self.__qzone_token = self.__qzone_token.group(1)
-        self.__qzone_token = self.__qzone_token.strip('"')
+            # return 'cookie 过期'
+            print('qzone_token is null')
+            pass
+        else:
+            self.__qzone_token = self.__qzone_token.group(1)
+            self.__qzone_token = self.__qzone_token.strip('"')
         return None
 
 
@@ -740,7 +756,7 @@ class QZoneUtil:
             # print(qq_num)
             return friend_info, None
         except:
-            return None, '未获取好友数量'
+            return None, 'ck 过期'
 
     def leave(self, uin):
         print('uin', uin)
@@ -774,8 +790,10 @@ class QZoneUtil:
             leaveParam = r'\"message\":\"(.+?)\"'
             msg = re.search(leaveParam, rsp.text)
             # print(msg)
+            message = '其他状况'
             if msg != None:
                 print(msg.group(1) + " -- " + str(uin))
+                message = msg.group(1)
             codeParam = r'\"code\":(.+?),'
             code = re.search(codeParam, rsp.text)
             # print(msg)
@@ -783,13 +801,15 @@ class QZoneUtil:
                 print(code.group(1) + " -- " + str(uin))
                 if int(code.group(1)) == 0 or int(code.group(1)) == -4010 or int(code.group(1)) == -4017:
 
-                    return code.group(1), msg.group(1)
+                    return code.group(1), message
                 elif int(code.group(1)) == -3000:
-                    return None, msg.group(1)
+                    return None, message
                 elif int(code.group(1)) == -4012:
-                    return -4012, msg.group(1)
+                    return -4012, message
                 else:
-                    return None, msg.group(1)
+                    return None, message
+            else:
+                return None, message
         except Exception as e:
             print('留言异常', e)
             return None, '异常'

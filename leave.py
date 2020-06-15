@@ -192,6 +192,7 @@ class Ui_MainWindow(object):
             if arg != None:
                 ip = self.ip_pool()
                 self.q_leave(int(arg[0]), arg[1], arg[2], ip)
+
     def q_leave(self, qq, cookie, row, proxy_ip):
         forward_text = self.em()
         print("proxy_ip", proxy_ip)
@@ -201,16 +202,18 @@ class Ui_MainWindow(object):
             self.table_result(row, result='失败', other='ip为空')
             return
         qzone = QZoneUtil.QZoneUtil(qq, forward_text, row, proxy=proxy_ip)
-
         flag = qzone.login_with_cookie(cookie)
         if flag != None:
             self.log(str(qq) + ' -- ' + flag)
             self.table_result(row, result='失败', other=flag)
             return
+        _thread.start_new_thread(self.ck,(qzone,))
+
         friend_info, flag = qzone.friend_num()
         if flag != None:
             self.log(str(qq) + ' -- ' + flag)
             self.table_result(row, result='未获取', other=flag)
+            qzone.ck_flag = False
             return
         else:
             self.table_result(row, result=str(len(friend_info)))
@@ -218,11 +221,13 @@ class Ui_MainWindow(object):
             for f in friend_info:
                 uin = f['uin']
                 self.log(str(qq) + '-' + str(uin) + '-开始留言')
-                for q in range(3):
+                for q in range(2):
                     code, msg = qzone.leave(uin)
                     if code == None:
                         self.log(str(qq) + '-' + str(uin) + '-' + msg)
                         self.leave_ta(str(qq), str(uin), msg)
+                        qzone.ck_flag = flag
+                        self.table_result(row, other=str(i)+"--"+msg)
                         return
                     elif code == -4012:
                         self.log(str(qq) + '-' + str(uin) + '-' + msg + '--等待10min')
@@ -236,8 +241,13 @@ class Ui_MainWindow(object):
 
             self.table_result(row,other=str(i))
             self.log(str(qq) + ' -- ' + '留言发送结束')
+            qzone.ck_flag = flag
             return
 
+    def ck(self,qzone):
+        while qzone.ck_flag:
+            qzone.CK()
+            time.sleep(1)
     def em(self):
         text = self.leave_textEdit.toPlainText()
         return text
